@@ -43,7 +43,7 @@ function wpdm_ha_register(): void {
 	wp_register_script(
 		'wp-desktop-ha',
 		plugin_dir_url( __FILE__ ) . 'wp-desktop-ha.js',
-		array( 'wp-desktop' ),
+		array( 'desktop-mode' ),
 		WPDM_HA_VERSION,
 		true
 	);

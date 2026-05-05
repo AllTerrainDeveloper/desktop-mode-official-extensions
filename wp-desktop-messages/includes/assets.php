@@ -34,17 +34,17 @@ function wpdm_messages_register_assets() {
 	wp_register_script(
 		'wp-desktop-messages',
 		WPDM_MESSAGES_URL . 'assets/js/messages' . $debug_js,
-		// `wp-desktop` is the framework's main shell bundle; the
+		// `desktop-mode` is the framework's main shell bundle; the
 		// messages chat window depends on `wp.desktop.*` being
 		// available, so list it as a dep to guarantee load order.
-		array( 'wp-desktop', 'wp-hooks', 'wp-i18n', 'jquery', 'heartbeat' ),
+		array( 'desktop-mode', 'wp-hooks', 'wp-i18n', 'jquery', 'heartbeat' ),
 		$ver,
 		true
 	);
 	wp_register_script(
 		'wp-desktop-messages-shell',
 		WPDM_MESSAGES_URL . 'assets/js/messages-shell' . $debug_js,
-		array( 'wp-desktop', 'wp-hooks', 'wp-i18n', 'jquery', 'heartbeat' ),
+		array( 'desktop-mode', 'wp-hooks', 'wp-i18n', 'jquery', 'heartbeat' ),
 		$ver,
 		true
 	);
