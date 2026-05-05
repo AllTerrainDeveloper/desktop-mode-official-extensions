@@ -126,7 +126,7 @@ function wpdm_routines_register_assets() {
 	wp_register_script(
 		'wp-desktop-routines',
 		DMR_URL . $src,
-		array( 'wp-desktop' ),
+		array( 'desktop-mode' ),
 		file_exists( $js_path ) ? (string) filemtime( $js_path ) : DMR_VERSION,
 		true
 	);
