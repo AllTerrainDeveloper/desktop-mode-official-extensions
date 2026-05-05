@@ -1,0 +1,34 @@
+/*
+ * WPD Table Showcase — light styling for hint text and the inline
+ * action button. The tables themselves theme through their own
+ * CSS custom properties.
+ */
+
+.wpd-table-showcase__hint {
+	margin: 0;
+	color: var( --wpd-text-muted, rgba( 0, 0, 0, 0.6 ) );
+	font-size: 12px;
+}
+
+.wpd-table-showcase__action {
+	font: inherit;
+	padding: 4px 10px;
+	border: 1px solid var( --wpd-border, rgba( 0, 0, 0, 0.16 ) );
+	border-radius: 4px;
+	background: var( --wpd-surface, transparent );
+	cursor: pointer;
+}
+
+.wpd-table-showcase__action:hover {
+	background: var( --wpd-surface-elevated, rgba( 0, 0, 0, 0.04 ) );
+}
+
+.wpd-table-showcase__empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 24px;
+	text-align: center;
+	color: var( --wpd-text-muted, rgba( 0, 0, 0, 0.6 ) );
+}

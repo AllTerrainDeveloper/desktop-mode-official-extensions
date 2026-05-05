@@ -1,0 +1,26 @@
+{
+	"name": "wp-desktop-messages",
+	"version": "0.23.0",
+	"private": true,
+	"type": "module",
+	"description": "Built-in 1-on-1 instant messaging for WP Desktop Mode.",
+	"license": "GPL-2.0-or-later",
+	"engines": {
+		"node": ">=24.0.0 <25.0.0"
+	},
+	"scripts": {
+		"build": "npm run build:messages && npm run build:messages-shell",
+		"build:messages": "WPDM_TARGET=messages vite build --mode development && WPDM_TARGET=messages vite build --mode production",
+		"build:messages-shell": "WPDM_TARGET=messages-shell vite build --mode development && WPDM_TARGET=messages-shell vite build --mode production",
+		"dev": "WPDM_TARGET=messages vite build --mode development --watch",
+		"typecheck": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"typescript": "^5.4.0",
+		"vite": "^5.4.0",
+		"wp-desktop-mode": "file:../desktop-mode"
+	},
+	"dependencies": {
+		"@wordpress/i18n": "^5.0.0"
+	}
+}

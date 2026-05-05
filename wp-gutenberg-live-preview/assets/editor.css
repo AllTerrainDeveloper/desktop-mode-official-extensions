@@ -1,0 +1,35 @@
+/*
+ * Editor-iframe (Gutenberg) cosmetics. The native preview window's
+ * own DOM is built and styled in the parent shell (shell.js +
+ * preview-frame.php), so nothing here applies inside that window.
+ */
+
+.wpglp-help {
+	margin: 0 0 12px;
+	color: #555;
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.wpglp-item.is-connected {
+	color: #0a6b25;
+}
+
+.wpglp-item.is-connected .dashicons-yes {
+	color: #1aaf3c;
+}
+
+/* Parent-shell rule the native window's iframe needs — same-origin
+ * means we can attach this from the editor iframe via a
+ * stylesheet link, but the cleanest route is the shell loading its
+ * own CSS. We keep the rule here as a safety net in case the
+ * preview iframe ever lands in this iframe context (it doesn't
+ * today, but cheap insurance).
+ */
+.wpglp-preview-frame {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border: 0;
+	background: #fafafa;
+}

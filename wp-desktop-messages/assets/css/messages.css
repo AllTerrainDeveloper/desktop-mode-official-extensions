@@ -1,0 +1,437 @@
+/**
+ * Desktop Mode — Messages.
+ *
+ * Native window styles for the chat UI. Layout: 280px left rail
+ * (conversation list) + flex-1 main panel (thread + composer).
+ * All colors use the shell theme variables so the window matches
+ * the user's chosen wallpaper / accent.
+ *
+ * @since 0.22.0
+ */
+
+.wpdm-messages {
+	display: flex;
+	height: 100%;
+	min-height: 0;
+	background: var( --wp-desktop-window-bg, #fff );
+	color: var( --wp-desktop-text, #1d2327 );
+	font-size: 13px;
+}
+
+/* -----------------------------------------------------------------------------
+ * Sidebar (conversation list)
+ * ------------------------------------------------------------------------- */
+
+.wpdm-messages__sidebar {
+	width: 280px;
+	min-width: 200px;
+	max-width: 360px;
+	flex: 0 0 auto;
+	border-inline-end: 1px solid var( --wp-desktop-border, #dcdcde );
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.wpdm-messages__sidebar-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-block-end: 1px solid var( --wp-desktop-border, #dcdcde );
+}
+
+.wpdm-messages__sidebar-title {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.wpdm-messages__list {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	min-height: 0;
+}
+
+.wpdm-messages__list-items {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.wpdm-messages__list-item {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 16px;
+	cursor: pointer;
+	border-block-end: 1px solid transparent;
+	transition: background-color 0.12s ease;
+	min-width: 0;
+}
+
+.wpdm-messages__list-item:hover {
+	background: rgba( 0, 0, 0, 0.03 );
+}
+
+.wpdm-messages__list-item--active,
+.wpdm-messages__list-item--active:hover {
+	background: rgba( var( --wp-admin-theme-color-rgb, 34, 113, 177 ), 0.1 );
+}
+
+.wpdm-messages__list-item-meta {
+	min-width: 0;
+}
+
+.wpdm-messages__list-item-name {
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.wpdm-messages__list-item-preview {
+	color: var( --wp-desktop-muted, #646970 );
+	font-size: 12px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	margin-block-start: 2px;
+}
+
+.wpdm-messages__list-item-trailing {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 4px;
+	color: var( --wp-desktop-muted, #646970 );
+	font-size: 11px;
+}
+
+/* -----------------------------------------------------------------------------
+ * Main panel (thread + composer)
+ * ------------------------------------------------------------------------- */
+
+.wpdm-messages__main {
+	flex: 1 1 auto;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	min-width: 0;
+	position: relative;
+}
+
+.wpdm-messages__placeholder {
+	flex: 1 1 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+}
+
+.wpdm-messages__thread {
+	flex: 1 1 auto;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+/*
+ * `display: flex` on the panes above OVERRIDES the user-agent
+ * `[hidden] { display: none }` rule (same specificity, author rule
+ * wins). Without these explicit overrides, `el.hidden = true` is a
+ * no-op and the placeholder + thread + composer all render at the
+ * same time — making it look like clicking a conversation does
+ * nothing.
+ */
+.wpdm-messages__placeholder[ hidden ],
+.wpdm-messages__thread[ hidden ],
+.wpdm-messages__composer[ hidden ],
+.wpdm-messages__directory-sheet[ hidden ] {
+	display: none !important;
+}
+
+.wpdm-messages__thread-inner {
+	flex: 1 1 auto;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.wpdm-messages__thread-scroller {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	padding: 16px;
+}
+
+.wpdm-messages__thread-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+/* Bubbles */
+
+.wpdm-messages__bubble {
+	max-width: 70%;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.wpdm-messages__bubble--mine {
+	align-self: flex-end;
+	align-items: flex-end;
+}
+
+.wpdm-messages__bubble--theirs {
+	align-self: flex-start;
+	align-items: flex-start;
+}
+
+.wpdm-messages__bubble-body {
+	background: rgba( 0, 0, 0, 0.05 );
+	color: var( --wp-desktop-text, #1d2327 );
+	padding: 8px 12px;
+	border-radius: 14px;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.wpdm-messages__bubble--mine .wpdm-messages__bubble-body {
+	background: var( --wp-admin-theme-color, #2271b1 );
+	color: #fff;
+}
+
+.wpdm-messages__bubble--nudge .wpdm-messages__bubble-body {
+	background: rgba( 219, 166, 23, 0.12 );
+	color: var( --wp-desktop-text, #1d2327 );
+	border: 1px dashed rgba( 219, 166, 23, 0.6 );
+}
+
+.wpdm-messages__bubble-time {
+	font-size: 11px;
+	color: var( --wp-desktop-muted, #646970 );
+	padding-inline: 4px;
+}
+
+/* Typing indicator */
+
+.wpdm-messages__typing {
+	align-self: flex-start;
+	display: inline-flex;
+	gap: 4px;
+	padding: 8px 12px;
+	background: rgba( 0, 0, 0, 0.05 );
+	border-radius: 14px;
+}
+
+.wpdm-messages__typing-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var( --wp-desktop-muted, #646970 );
+	animation: wpdm-messages-typing-bounce 1s infinite ease-in-out;
+}
+
+.wpdm-messages__typing-dot:nth-child( 2 ) { animation-delay: 0.15s; }
+.wpdm-messages__typing-dot:nth-child( 3 ) { animation-delay: 0.3s; }
+
+@keyframes wpdm-messages-typing-bounce {
+	0%, 80%, 100% { transform: translateY( 0 ); opacity: 0.4; }
+	40% { transform: translateY( -4px ); opacity: 1; }
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.wpdm-messages__typing-dot {
+		animation: none;
+		opacity: 0.7;
+	}
+}
+
+/* Composer
+ *
+ * Three controls all the SAME height (--composer-control-h) sitting
+ * on a single flex row: textarea (auto-grows up) + nudge + send.
+ * `align-items: flex-end` anchors the buttons to the textarea's
+ * bottom edge so when the textarea expands to multi-line, the
+ * buttons stay glued to the bottom rather than floating mid-row.
+ *
+ * The window's bottom-end resize handle lives in the corner —
+ * extra inline-end padding keeps the Send button clear of it.
+ */
+
+.wpdm-messages__composer {
+	--composer-control-h: 38px;
+
+	border-block-start: 1px solid var( --wp-desktop-border, #dcdcde );
+	padding: 12px 16px 14px;
+	padding-inline-end: 28px;
+	display: flex;
+	gap: 10px;
+	align-items: flex-end;
+}
+
+.wpdm-messages__composer-input {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* Match the textarea's outer height to the control height when
+ * collapsed (rows=1). Auto-grow lets it expand for longer messages.
+ * The padding values come from the wpd-textarea component defaults. */
+.wpdm-messages__composer-input::part( textarea ),
+.wpdm-messages__composer-input textarea {
+	min-height: var( --composer-control-h );
+	box-sizing: border-box;
+}
+
+.wpdm-messages__composer-actions {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+/* Both action buttons share the same height as the textarea baseline.
+ * `<wpd-button>` exposes its inner <button> via ::part(button) — the
+ * only reliable knob for height/padding. */
+.wpdm-messages__composer-actions wpd-button::part( button ) {
+	height: var( --composer-control-h );
+	min-height: var( --composer-control-h );
+	box-sizing: border-box;
+}
+
+.wpdm-messages__composer-nudge::part( button ) {
+	width: var( --composer-control-h );
+	padding: 0;
+	font-size: 20px;
+	line-height: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.wpdm-messages__composer-nudge-icon {
+	display: inline-block;
+	transition: transform 0.15s ease;
+}
+
+.wpdm-messages__composer-nudge:hover::part( button ) {
+	background: rgba( 0, 0, 0, 0.08 );
+}
+
+/* Subtle wave on hover — communicates "this is the nudge button"
+ * without yelling. Respects reduced-motion. */
+@media ( prefers-reduced-motion: no-preference ) {
+	.wpdm-messages__composer-nudge:hover .wpdm-messages__composer-nudge-icon {
+		transform: rotate( 18deg );
+	}
+}
+
+.wpdm-messages__composer-send::part( button ) {
+	min-width: 76px;
+	padding: 0 18px;
+	font-weight: 600;
+}
+
+/* Directory sheet */
+
+.wpdm-messages__directory-sheet {
+	position: absolute;
+	inset: 0;
+	background: var( --wp-desktop-window-bg, #fff );
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+}
+
+.wpdm-messages__directory {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	height: 100%;
+}
+
+.wpdm-messages__directory-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-block-end: 1px solid var( --wp-desktop-border, #dcdcde );
+}
+
+.wpdm-messages__directory-search {
+	padding: 12px 16px;
+	border-block-end: 1px solid var( --wp-desktop-border, #dcdcde );
+}
+
+.wpdm-messages__directory-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	overflow-y: auto;
+	flex: 1 1 auto;
+	min-height: 0;
+}
+
+.wpdm-messages__directory-row {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 16px;
+	cursor: pointer;
+}
+
+.wpdm-messages__directory-row:hover {
+	background: rgba( 0, 0, 0, 0.03 );
+}
+
+.wpdm-messages__directory-row-text {
+	min-width: 0;
+}
+
+.wpdm-messages__directory-row-name {
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.wpdm-messages__directory-row-role {
+	font-size: 11px;
+	color: var( --wp-desktop-muted, #646970 );
+	margin-block-start: 2px;
+	text-transform: capitalize;
+}
+
+.wpdm-messages__directory-empty {
+	padding: 24px 16px;
+	text-align: center;
+	color: var( --wp-desktop-muted, #646970 );
+}
+
+/* Settings tab — pad consistent with built-in tabs */
+
+.wpdm-messages-settings {
+	display: block;
+	padding: 0;
+}
+
+/* Lay out the "Accept messages from" row as label + control on one
+ * line so the segmented control doesn't wrap each option's text. */
+.wpdm-messages-settings__accept-row {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.wpdm-messages-settings__accept-row wpd-segmented {
+	align-self: flex-start;
+}
