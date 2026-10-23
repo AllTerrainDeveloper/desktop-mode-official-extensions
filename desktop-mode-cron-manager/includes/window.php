@@ -10,14 +10,19 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Register the script + style handles backing the Cron Manager window.
  *
- * The script is served through `admin-ajax.php?action=openstation_cron_bundle`
- * — the response body starts with the config assignment, then streams
- * the prebuilt bundle, then closes with the `customElements.whenDefined`
- * wrapper. Everything the bundle needs is in a single HTTP response,
- * so there is no `wp_print_scripts` lifecycle to depend on, no
- * `wp_localize_script` / `wp_add_inline_script` data that can be
- * dropped on the lazy-load path, and no admin-template hook that has
- * to fire on the consuming user's environment.
+ * The bundle is the prebuilt file (min when not SCRIPT_DEBUG), with two
+ * inline scripts on the handle, which OpenStation prints with it whether
+ * it loads at boot or on the window's first open:
+ *
+ *  1. `before`: `window.openStationCronManagerConfig = {...};` — REST
+ *     URLs + nonce, only for users who may open the window.
+ *  2. `after`: a `customElements.whenDefined('os-table')` wrapper around
+ *     the render callback the bundle just registered, defending against
+ *     custom-element upgrade races on the first window-open.
+ *
+ * The JS-side global name (`openStationCronManagerConfig`) and the native
+ * window id (`wpdm-cron-manager`) must stay in lockstep with the prebuilt
+ * bundle, which hardcodes both and has no source in this tree.
  */
 function openstation_cron_manager_register_assets() {
 	wp_register_style(
@@ -27,14 +32,15 @@ function openstation_cron_manager_register_assets() {
 		OPENSTATION_CRON_MANAGER_VERSION
 	);
 
-	$bundle_url = add_query_arg(
-		array( 'action' => 'openstation_cron_bundle' ),
-		admin_url( 'admin-ajax.php' )
-	);
+	$suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
+	$file   = 'assets/js/cron-manager' . $suffix . '.js';
+	if ( ! file_exists( OPENSTATION_CRON_MANAGER_DIR . $file ) ) {
+		$file = 'assets/js/cron-manager.js';
+	}
 
 	wp_register_script(
 		'desktop-mode-cron-manager',
-		$bundle_url,
+		OPENSTATION_CRON_MANAGER_URL . $file,
 		// `openstation` — the prebuilt bundle reaches into the
 		// `<os-table>` / `<os-select>` / `<os-text-field>` setters
 		// the moment the window opens, so the custom-element classes
@@ -43,30 +49,15 @@ function openstation_cron_manager_register_assets() {
 		OPENSTATION_CRON_MANAGER_VERSION,
 		true
 	);
-}
 
-/**
- * Serve the Cron Manager bundle with the REST config baked in.
- *
- * Hooked on `wp_ajax_openstation_cron_bundle`. Outputs:
- *
- *  1. `window.openStationCronManagerConfig = {...};` — REST URLs + nonce.
- *  2. The prebuilt cron-manager bundle (min when not SCRIPT_DEBUG).
- *  3. A `customElements.whenDefined('os-table')` wrapper around the
- *     render callback the bundle just registered, defending against
- *     custom-element upgrade races on the first window-open.
- *
- * Cache headers are set to per-user, no-store so different sessions
- * never share a response (the response carries a session-bound nonce).
- *
- * The JS-side global name (`openStationCronManagerConfig`) and the native
- * window id (`wpdm-cron-manager`) must stay in lockstep with the prebuilt
- * bundle, which hardcodes both and has no source in this tree.
- */
-function openstation_cron_manager_serve_bundle() {
+	wp_add_inline_script(
+		'desktop-mode-cron-manager',
+		'(function(){var r=window.openStationNativeWindows=window.openStationNativeWindows||{};var orig=r["wpdm-cron-manager"];if(!orig){return;}r["wpdm-cron-manager"]=function(body){if(window.customElements&&typeof customElements.whenDefined==="function"){customElements.whenDefined("os-table").then(function(){orig(body);});}else{orig(body);}};})();',
+		'after'
+	);
+
 	if ( ! openstation_cron_manager_user_can_use() ) {
-		status_header( 403 );
-		exit;
+		return;
 	}
 
 	$base = trailingslashit( rest_url( OPENSTATION_CRON_MANAGER_REST_NAMESPACE ) );
@@ -78,25 +69,11 @@ function openstation_cron_manager_serve_bundle() {
 		'runNowUrl'    => esc_url_raw( $base . 'events/run-now' ),
 	);
 
-	nocache_headers();
-	header( 'Content-Type: application/javascript; charset=utf-8' );
-	header( 'Vary: Cookie' );
-
-	echo '/* desktop-mode-cron-manager config + bundle */' . "\n";
-	echo 'window.openStationCronManagerConfig = ' . wp_json_encode( $config ) . ';' . "\n";
-
-	$suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
-	$bundle = OPENSTATION_CRON_MANAGER_DIR . 'assets/js/cron-manager' . $suffix . '.js';
-	if ( ! file_exists( $bundle ) ) {
-		$bundle = OPENSTATION_CRON_MANAGER_DIR . 'assets/js/cron-manager.js';
-	}
-	if ( file_exists( $bundle ) ) {
-		readfile( $bundle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
-	}
-
-	echo "\n" . '(function(){var r=window.openStationNativeWindows=window.openStationNativeWindows||{};var orig=r["wpdm-cron-manager"];if(!orig){return;}r["wpdm-cron-manager"]=function(body){if(window.customElements&&typeof customElements.whenDefined==="function"){customElements.whenDefined("os-table").then(function(){orig(body);});}else{orig(body);}};})();';
-
-	exit;
+	wp_add_inline_script(
+		'desktop-mode-cron-manager',
+		'window.openStationCronManagerConfig = ' . wp_json_encode( $config ) . ';',
+		'before'
+	);
 }
 
 /**
@@ -274,9 +251,4 @@ function openstation_cron_manager_maybe_init_ui() {
 	add_action( 'admin_enqueue_scripts', 'openstation_cron_manager_enqueue_style', 30 );
 }
 
-// The bundle endpoint is wired unconditionally so the config is
-// reachable even when the consumer's page-render hooks misbehave —
-// `openstation_cron_manager_user_can_use()` is the actual auth gate
-// inside the handler.
-add_action( 'wp_ajax_openstation_cron_bundle', 'openstation_cron_manager_serve_bundle' );
 add_action( 'plugins_loaded', 'openstation_cron_manager_maybe_init_ui', 20 );
