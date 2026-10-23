@@ -7,7 +7,6 @@
  * `RestError` with the WP error `code` for branching.
  *
  * @public
- * @since 0.18.0
  */
 
 import type { CodeEditorConfig } from './monaco-bootstrap';
@@ -50,10 +49,10 @@ export class RestError extends Error {
 }
 
 function getConfig(): CodeEditorConfig {
-	const config = window.wpDesktopCodeEditorConfig;
+	const config = window.openStationCodeEditorConfig;
 	if ( ! config ) {
 		throw new Error(
-			'wp-desktop-code-editor: wpDesktopCodeEditorConfig missing — is the editor enqueued?',
+			'os-code-editor: openStationCodeEditorConfig missing — is the editor enqueued?',
 		);
 	}
 	return config;
@@ -95,7 +94,7 @@ async function getJson< T >(
 		};
 		throw new RestError(
 			obj.message ?? `HTTP ${ res.status }`,
-			obj.code ?? 'wpdc_http_error',
+			obj.code ?? 'osc_http_error',
 			res.status,
 			obj.data ?? null,
 		);
@@ -105,7 +104,7 @@ async function getJson< T >(
 }
 
 /**
- * GET /wp-desktop/v1/code/tree?path=<rel>
+ * GET /desktop-mode-code-editor/v1/tree?path=<rel>
  */
 export function fetchTree(
 	path: string,
@@ -119,7 +118,7 @@ export function fetchTree(
 }
 
 /**
- * GET /wp-desktop/v1/code/file?path=<rel>
+ * GET /desktop-mode-code-editor/v1/file?path=<rel>
  */
 export function fetchFile(
 	path: string,
@@ -172,7 +171,7 @@ export interface PhpSymbolDetail extends PhpSymbolMatch {
 }
 
 /**
- * GET /wp-desktop/v1/code/php-symbols?prefix=…&kinds=…
+ * GET /desktop-mode-code-editor/v1/php-symbols?prefix=…&kinds=…
  *
  * Returns the trimmed list shape (no full doc strings) — Monaco
  * fetches the heavy `PhpSymbolDetail` lazily via {@link fetchPhpSymbolDetail}
@@ -195,7 +194,7 @@ export function fetchPhpSymbols(
 }
 
 /**
- * GET /wp-desktop/v1/code/php-symbols/<name>
+ * GET /desktop-mode-code-editor/v1/php-symbols/<name>
  *
  * Full record for one symbol — PHPDoc summary, parameters, source.
  * Drives the hover popover.
@@ -228,7 +227,7 @@ export async function fetchPhpSymbolDetail(
 		const obj = ( body ?? {} ) as { code?: string; message?: string };
 		throw new RestError(
 			obj.message ?? `HTTP ${ res.status }`,
-			obj.code ?? 'wpdc_http_error',
+			obj.code ?? 'osc_http_error',
 			res.status,
 			null,
 		);
@@ -266,14 +265,15 @@ function utf8ToBase64( str: string ): string {
 }
 
 /**
- * POST /wp-desktop/v1/code/file — write a file's contents.
+ * POST /desktop-mode-code-editor/v1/file — write a file's contents.
+ * The server registers both PUT and POST on this route; the client
+ * sends POST because some hosts' WAFs block PUT requests containing
+ * `<?php` strings.
  *
  * On a 409 conflict (file changed on disk since the editor opened
  * it) the thrown {@link RestError} carries `data` shaped as
  * {@link ConflictData} — caller can branch and offer "reload from
  * disk" / "overwrite anyway".
- *
- * @since 0.18.0
  */
 export async function saveFile(
 	path: string,
@@ -314,7 +314,7 @@ export async function saveFile(
 		};
 		throw new RestError(
 			obj.message ?? `HTTP ${ res.status }`,
-			obj.code ?? 'wpdc_http_error',
+			obj.code ?? 'osc_http_error',
 			res.status,
 			obj.data ?? null,
 		);
