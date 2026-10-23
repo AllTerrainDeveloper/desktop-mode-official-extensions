@@ -11,7 +11,7 @@
 	height: 100%;
 	min-height: 0;
 	background: var( --os-ui-surface, #fff );
-	color: var( --os-ui-text, #1d2327 );
+	color: var( --os-ui-fg, #1d2327 );
 }
 
 .osm-cron-manager__toolbar {
