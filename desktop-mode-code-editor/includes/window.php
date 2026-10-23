@@ -2,18 +2,17 @@
 /**
  * Code Editor window, icon, and asset registration.
  *
- * Registers the `wpdc-editor` native window + matching desktop icon
- * and serves the bundle through `admin-ajax.php` so the Monaco loader
- * URL + REST URLs + nonce land in the response body — no
- * `wp_localize_script` lifecycle to depend on, no inline-script tag
- * to lose on the lazy-load path.
+ * Registers the `wpdc-editor` native window + matching desktop icon.
+ * The bundle is a static file; the Monaco loader URL, REST URLs and
+ * nonce ride on the handle as a `before` inline script, which
+ * OpenStation prints with the script whether it loads at boot or on
+ * the window's first open.
  *
  * Window id (`wpdc-editor`), DOM selectors (`data-osc-editor-*`),
  * CSS classes (`wpdc-editor*`), and the JS-side config global
  * (`window.openStationCodeEditorConfig`) intentionally retain their
- * original spellings — third-party plugins documented under
- * `desktop-mode/docs/examples/code-editor-open.md` deep-link by
- * window id, and renaming would break public consumers.
+ * original spellings — third-party plugins deep-link by window id
+ * (see README.md), and renaming would break public consumers.
  *
  * @package OpenStationCodeEditor
  */
@@ -34,9 +33,9 @@ function openstation_code_editor_monaco_vendor_url() {
 /**
  * Register the script + style handles backing the editor window.
  *
- * The script is served through `admin-ajax.php?action=openstation_code_editor_bundle`
- * so the editor config is baked into the response body. The CSS is a
- * normal static stylesheet.
+ * The bundle is the prebuilt file (min when not SCRIPT_DEBUG). The
+ * editor config is attached as a `before` inline script, only for
+ * users who may open the editor, since it carries a REST nonce.
  */
 function openstation_code_editor_register_assets() {
 	$css_path = OPENSTATION_CODE_EDITOR_DIR . 'assets/css/code-editor.css';
@@ -49,16 +48,18 @@ function openstation_code_editor_register_assets() {
 		file_exists( $css_path ) ? (string) filemtime( $css_path ) : OPENSTATION_CODE_EDITOR_VERSION
 	);
 
-	$bundle_url = add_query_arg(
-		array( 'action' => 'openstation_code_editor_bundle' ),
-		admin_url( 'admin-ajax.php' )
-	);
+	$suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
+	$file   = 'assets/js/code-editor' . $suffix . '.js';
+	if ( ! file_exists( OPENSTATION_CODE_EDITOR_DIR . $file ) ) {
+		$file = 'assets/js/code-editor.js';
+	}
+	$js_path = OPENSTATION_CODE_EDITOR_DIR . $file;
 
 	wp_register_script(
 		'desktop-mode-code-editor',
-		$bundle_url,
+		OPENSTATION_CODE_EDITOR_URL . $file,
 		array( 'wp-i18n' ),
-		OPENSTATION_CODE_EDITOR_VERSION,
+		file_exists( $js_path ) ? (string) filemtime( $js_path ) : OPENSTATION_CODE_EDITOR_VERSION,
 		true
 	);
 	wp_set_script_translations(
@@ -66,24 +67,9 @@ function openstation_code_editor_register_assets() {
 		'desktop-mode-code-editor',
 		OPENSTATION_CODE_EDITOR_DIR . 'languages'
 	);
-}
 
-/**
- * Serve the Code Editor bundle with the config baked in.
- *
- * Hooked on `wp_ajax_openstation_code_editor_bundle`. Outputs:
- *
- *   1. `window.openStationCodeEditorConfig = {...};` — Monaco vendor URL
- *      + REST URLs + nonce.
- *   2. The prebuilt code-editor bundle (min when not SCRIPT_DEBUG).
- *
- * `Vary: Cookie` + `nocache_headers()` ensure each session gets its
- * own nonce — cached responses are never shared across users.
- */
-function openstation_code_editor_serve_bundle() {
 	if ( ! openstation_code_editor_user_can_use() ) {
-		status_header( 403 );
-		exit;
+		return;
 	}
 
 	$base = trailingslashit( rest_url( OPENSTATION_CODE_EDITOR_REST_NAMESPACE ) );
@@ -98,24 +84,11 @@ function openstation_code_editor_serve_bundle() {
 		'phpSymbolUrl'    => esc_url_raw( $base . 'php-symbols/' ),
 	);
 
-	nocache_headers();
-	header( 'Content-Type: application/javascript; charset=utf-8' );
-	header( 'Vary: Cookie' );
-
-	echo '/* desktop-mode-code-editor config + bundle */' . "\n";
-	echo 'window.openStationCodeEditorConfig = ' . wp_json_encode( $config ) . ';' . "\n";
-
-	$suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
-	$bundle = OPENSTATION_CODE_EDITOR_DIR . 'assets/js/code-editor' . $suffix . '.js';
-	if ( ! file_exists( $bundle ) ) {
-		$bundle = OPENSTATION_CODE_EDITOR_DIR . 'assets/js/code-editor.js';
-	}
-	if ( file_exists( $bundle ) ) {
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
-		readfile( $bundle );
-	}
-
-	exit;
+	wp_add_inline_script(
+		'desktop-mode-code-editor',
+		'window.openStationCodeEditorConfig = ' . wp_json_encode( $config ) . ';',
+		'before'
+	);
 }
 
 /**
@@ -164,16 +137,20 @@ function openstation_code_editor_register_window() {
 	}
 
 	$window_args = array(
-		'title'        => __( 'Code', 'desktop-mode-code-editor' ),
-		'icon'         => 'dashicons-editor-code',
-		'template'     => 'openstation_code_editor_render_template',
-		'script'       => 'desktop-mode-code-editor',
-		'width'        => 960,
-		'height'       => 640,
-		'min_width'    => 480,
-		'min_height'   => 320,
-		'placement'    => 'taskbar',
-		'capabilities' => array( 'edit_plugins' ),
+		'title'          => __( 'Code', 'desktop-mode-code-editor' ),
+		'icon'           => 'dashicons-editor-code',
+		'template'       => 'openstation_code_editor_render_template',
+		'script'         => 'desktop-mode-code-editor',
+		'width'          => 960,
+		'height'         => 640,
+		'min_width'      => 480,
+		'min_height'     => 320,
+		'placement'      => 'dock',
+		'capabilities'   => array( 'edit_plugins' ),
+		// The bundle installs the Cmd/Ctrl+Shift+E shortcut and the
+		// `os-code-open` listener when it loads, so it has to load at
+		// boot rather than on the window's first open.
+		'preload_script' => true,
 	);
 
 	/**
@@ -239,9 +216,4 @@ function openstation_code_editor_maybe_init_ui() {
 	add_action( 'admin_enqueue_scripts', 'openstation_code_editor_enqueue_style', 30 );
 }
 
-// The bundle endpoint is wired unconditionally so the config is
-// reachable even when the consumer's page-render hooks misbehave —
-// `openstation_code_editor_user_can_use()` is the actual auth gate
-// inside the handler.
-add_action( 'wp_ajax_openstation_code_editor_bundle', 'openstation_code_editor_serve_bundle' );
 add_action( 'plugins_loaded', 'openstation_code_editor_maybe_init_ui', 20 );
