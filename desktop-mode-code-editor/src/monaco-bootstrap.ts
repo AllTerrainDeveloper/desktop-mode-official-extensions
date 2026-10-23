@@ -46,8 +46,8 @@ import type * as Monaco from 'monaco-editor';
 /**
  * Shape of the config every editor module reads. Injected as
  * `window.openStationCodeEditorConfig` by
- * `openstation_code_editor_serve_bundle()` in `includes/window.php`,
- * which prepends the config assignment to the AJAX-served bundle.
+ * `openstation_code_editor_register_assets()` in `includes/window.php`,
+ * as a `before` inline script on the bundle's handle.
  * Re-declared here in `monaco-bootstrap.ts` only — every other module
  * imports the type to keep one canonical declaration.
  */
